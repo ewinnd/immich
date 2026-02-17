@@ -53,13 +53,6 @@ class MapThumbnail extends HookConsumerWidget {
     Future<void> onMapCreated(MapLibreMapController mapController) async {
       controller.value = mapController;
       styleLoaded.value = false;
-      if (assetMarkerRemoteId != null) {
-        // The iOS impl returns wrong toScreenLocation without the delay
-        Future.delayed(
-          const Duration(milliseconds: 100),
-          () async => position.value = await mapController.toScreenLocation(centre),
-        );
-      }
       onCreated?.call(mapController);
     }
 
@@ -74,6 +67,12 @@ class MapThumbnail extends HookConsumerWidget {
         // https://github.com/maplibre/flutter-maplibre-gl/issues/192
       }
       styleLoaded.value = true;
+    }
+
+    void onCameraIdle() async {
+      if (assetMarkerRemoteId != null && controller.value != null && position.value == null) {
+        position.value = await controller.value!.toScreenLocation(centre);
+      }
     }
 
     return MapThemeOverride(
@@ -98,6 +97,7 @@ class MapThumbnail extends HookConsumerWidget {
                   styleString: style,
                   onMapCreated: onMapCreated,
                   onStyleLoadedCallback: onStyleLoaded,
+                  onCameraIdle: onCameraIdle,
                   onMapClick: onTap,
                   doubleClickZoomEnabled: false,
                   dragEnabled: false,
